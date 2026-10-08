@@ -98,7 +98,7 @@ export function clean(node: ParentNode) {
 }
 
 /** A code block is always <pre><code data-lang?>plain text</code></pre>; formatting inside it is dropped. */
-function normalizePre(pre: Element) {
+export function normalizePre(pre: Element) {
   const lang = pre.getAttribute('data-lang') || pre.querySelector('code[data-lang]')?.getAttribute('data-lang');
   pre.querySelectorAll('br').forEach(b => b.replaceWith('\n'));
   const code = document.createElement('code');

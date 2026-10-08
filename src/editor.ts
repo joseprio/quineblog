@@ -1,7 +1,7 @@
 // Post editor: a <dialog> around Pell, with inlined images and a "read more" marker.
 import { exec, init, type Editor as Pell } from './pell';
 import { $, $$, esc, fields, link, mk, pickFiles, slugify, today } from './dom';
-import { meta, readPost, rebuild, sanitize, writePost } from './content';
+import { meta, normalizePre, readPost, rebuild, sanitize, writePost } from './content';
 import { go } from './views';
 import { setDirty } from './state';
 import { languageNames } from './code';
@@ -63,7 +63,7 @@ async function insertImages(e: Editor, files: File[]) {
   }
 }
 
-/** Turns the current block into a code block, or changes the language of the one the caret is in. */
+/** Toggles a code block: turns the current block into one (asking for its language), or the code block back into paragraphs. */
 function codeBlock(e: Editor) {
   restoreSelection(e);
   const inPre = () => {
@@ -72,14 +72,37 @@ function codeBlock(e: Editor) {
     return pre && e.content.contains(pre) ? pre : null;
   };
   let pre = inPre();
-  const current = pre?.querySelector('code')?.dataset.lang ?? pre?.dataset.lang ?? '';
-  const lang = prompt(`Code language, or empty for none.\nInstalled: ${languageNames().join(', ') || 'none'}`, current);
+  if (pre) {
+    // One paragraph per line; the caret goes to the first. Enter inside the editor adds <br>, not "\n".
+    pre.querySelectorAll('br').forEach(b => b.replaceWith('\n'));
+    const paras = pre.textContent!.replace(/\n$/, '').split('\n').map(line => {
+      const p = document.createElement('p');
+      if (line) p.textContent = line; else p.append(document.createElement('br'));
+      return p;
+    });
+    pre.replaceWith(...paras);
+    const r = document.createRange();
+    r.setStart(paras[0], 0);
+    r.collapse(true);
+    getSelection()!.removeAllRanges();
+    getSelection()!.addRange(r);
+    return;
+  }
+  const lang = prompt(`Code language, or empty for none.\nInstalled: ${languageNames().join(', ') || 'none'}`, '');
   if (lang === null) return;
   restoreSelection(e);
-  if (!pre) { exec('formatBlock', '<pre>'); pre = inPre() }
+  exec('formatBlock', '<pre>');
+  pre = inPre();
   if (!pre) return;
-  const target = pre.querySelector('code') ?? pre, id = lang.trim().toLowerCase();
-  if (id) target.dataset.lang = id; else delete target.dataset.lang;
+  // Same shape as saved posts (<pre><code data-lang>), so the language label and styles apply while editing.
+  const id = lang.trim().toLowerCase();
+  if (id) pre.dataset.lang = id;
+  normalizePre(pre);
+  const r = document.createRange();
+  r.selectNodeContents(pre.firstChild!);
+  r.collapse(false);
+  getSelection()!.removeAllRanges();
+  getSelection()!.addRange(r);
 }
 
 /** Toggles inline code: unwraps the <code> around the caret, or wraps the selection (or a placeholder to type over) in one. */
@@ -154,7 +177,7 @@ function editor(): Editor {
       { icon: '<b>h</b>', title: 'Subheading', active: 'h4', result: () => exec('formatBlock', '<h4>') },
       'paragraph', 'quote', 'olist', 'ulist',
       { icon: '<code>`c`</code>', title: 'Inline code', active: ':not(pre) > code', result: () => inlineCode(e) },
-      { icon: '&lt;/&gt;', title: 'Code block (choose a language)', active: 'pre', result: () => codeBlock(e) },
+      { icon: '&lt;/&gt;', title: 'Code block', active: 'pre', result: () => codeBlock(e) },
       'link',
       { icon: '&#128247;', title: 'Insert image', result: () => { pickFiles('image/*', true).then(f => insertImages(e, f)) } },
       'line',

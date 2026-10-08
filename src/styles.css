@@ -171,6 +171,7 @@ input[name=hue]::-moz-range-thumb { width: 1.25rem; height: 1.25rem; border-radi
 .pell-actionbar { display: flex; flex-wrap: wrap; gap: .125rem; padding: .25rem; border-bottom: 1px solid var(--border) }
 .pell-button { min-width: 2.25rem; padding: .35rem .5rem; border: 0; background: none; color: var(--fg) }
 .pell-button svg { display: block; margin: auto }
+.pell-button code { padding: 0; background: none; font-size: .9em }
 .pell-button:disabled { opacity: .35; cursor: default; background: none }
 .pell-button:hover, .pell-button-selected { background: var(--soft); filter: none }
 .pell-content { min-height: 16rem; max-height: 55vh; overflow: auto; padding: 1rem; outline: 0 }

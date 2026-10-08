@@ -3,6 +3,14 @@
 A whole blog in one HTML file. The page contains its own posts, styles, script and editor
 ([Pell](https://github.com/jaredreich/pell)), and can save a new copy of itself with your changes.
 
+**[Live demo](https://joseprio.github.io/quineblog/dist/index.html)**
+
+- **Compact.** The demo is a single ~73 KiB file (~26 KiB gzipped) with seven posts, the editor and
+  syntax highlighting. It needs no server, database or external requests, and works as a static file on any host.
+- **Search engine friendly.** Every post is prerendered as plain semantic HTML. Crawlers and readers
+  without JavaScript get all the content. The script only shows and hides parts of the page. The page also
+  carries description and Open Graph meta tags, plus JSON-LD (`Blog` / `BlogPosting`) structured data.
+
 ## Build
 
 ```sh

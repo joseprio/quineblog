@@ -1,0 +1,77 @@
+{
+  "format": "quine-blog",
+  "version": 1,
+  "site": {
+    "title": "Quine Blog",
+    "description": "A whole blog in one HTML file that edits and saves itself.",
+    "hue": 250,
+    "lang": "en"
+  },
+  "posts": [
+    {
+      "slug": "welcome",
+      "title": "Welcome to your self-editing blog",
+      "date": "2026-10-07",
+      "categories": [
+        "Meta",
+        "Guides"
+      ],
+      "html": "<p>This page is a <strong>quine</strong>: a single HTML file that contains everything it needs to render, edit and re-save itself. There is no server, no build step and no database. You write a post, download the page, and upload it back to your host.</p>\n<hr data-more=\"\">\n<h3>How it works</h3>\n<p>Every post is prerendered in the HTML. Search engines and readers without JavaScript get all the content; the script only hides and shows parts of it, so the home page shows snippets and each post page shows the full text with a table of contents.</p>\n<h3>Writing a post</h3>\n<p>Open the <strong>⋯</strong> menu next to <em>Categories</em> and choose <em>New post</em>, or <em>Edit this post</em> while reading one. While you have unsaved changes, a bar at the bottom of the page offers to download the updated file.</p>\n<h4>The snippet break</h4>\n<p>Click the <code>✂</code> button in the editor to mark where the snippet ends. Everything above the dashed line is shown on the home page, followed by a <em>Read more</em> link.</p>\n<h4>Images</h4>\n<p>Insert, paste or drop images into the editor. They are stored inside the page as data URLs, and large photos are scaled down first to keep the file small.</p>\n<h4>Code</h4>\n<p>The <code>&lt;/&gt;</code> button turns a paragraph into a code block and asks for its language. Code is highlighted with Prism; add or remove languages under <em>Settings</em>.</p>\n<pre><code data-lang=\"js\">// Every post is an &lt;article&gt; in this very page\nconst posts = document.querySelectorAll('main > article');\nconsole.log(`${posts.length} posts`);</code></pre>\n<h3>Publishing</h3>\n<p>Choose <em>Download HTML</em> from the menu or the bar at the bottom. You get a complete copy of the page with your changes, ready to upload as <code>index.html</code>.</p>\n<h3>Upgrading to a new version</h3>\n<p>Your posts and settings can travel between versions of this page. Open <em>Settings</em> and choose <em>Export data</em> to save them as a JSON file. Open the newer page, choose <em>Import data</em>, then <em>Download HTML</em>.</p>\n<h3>Theming</h3>\n<p>All colours come from one CSS variable, <code>--hue</code>. Pick a new hue under <em>Settings</em>. The sun and moon button in the header switches between light, dark and automatic modes.</p>"
+    },
+    {
+      "slug": "a-picture-is-worth-a-data-url",
+      "title": "A picture is worth a data URL",
+      "date": "2026-10-01",
+      "categories": [
+        "Guides"
+      ],
+      "html": "<p>A single-file blog can't link to an <code>images/</code> folder, so every picture lives inside the page itself.</p>\n<p><img src=\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 280'%3E%3Cdefs%3E%3ClinearGradient id='s' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23ffb36b'/%3E%3Cstop offset='1' stop-color='%23ff6b8b'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='640' height='280' fill='url(%23s)'/%3E%3Ccircle cx='470' cy='120' r='46' fill='%23fff3c4'/%3E%3Cpath d='M0 280 170 120l90 80 110-130 140 150 130-60v120z' fill='%235b3a7a'/%3E%3Cpath d='M0 280 120 200l100 50 140-90 130 80 150-40v80z' fill='%23382456'/%3E%3C/svg%3E\" alt=\"Illustration of purple mountains under a sunset sky\" width=\"640\" height=\"280\"></p>\n<hr data-more=\"\">\n<h3>Why data URLs</h3>\n<p>A data URL holds the bytes of the image in the <code>src</code> attribute. The page stays one self-contained file that you can move, back up or email without breaking anything.</p>\n<h3>Keeping it small</h3>\n<p>Every byte of an image ends up in the HTML, so the editor scales photos wider than 1600 pixels down and re-encodes them as WebP when that is smaller. SVG and GIF files are kept as they are.</p>\n<h3>Alt text</h3>\n<p>When you insert an image, you are asked to describe it. The description becomes the <code>alt</code> attribute, which screen readers and search engines use.</p>"
+    },
+    {
+      "slug": "choosing-a-hue",
+      "title": "Choosing a hue",
+      "date": "2026-09-24",
+      "categories": [
+        "Design"
+      ],
+      "html": "<p>The whole theme is derived from a single number between 0 and 359. Change it and every link, button, border and background follows along.</p>\n<hr data-more=\"\">\n<h3>One variable, many colours</h3>\n<p>The palette is written in <code>oklch()</code>, which keeps perceived lightness stable as the hue changes. That means a green theme and a purple theme have the same contrast.</p>\n<pre><code data-lang=\"css\">:root { --hue: 250; }\na { color: oklch(50% .18 var(--hue)); }</code></pre>\n<h3>Light and dark</h3>\n<p>Each colour is declared once with <code>light-dark()</code>, so the dark palette sits right next to the light one. The page follows your system setting until you pick a mode with the header button.</p>"
+    },
+    {
+      "slug": "semantic-html-no-classes",
+      "title": "Semantic HTML, no classes",
+      "date": "2026-09-15",
+      "categories": [
+        "Design"
+      ],
+      "html": "<p>Like Pico.css, the stylesheet targets elements rather than class names. A post is an <code>&lt;article&gt;</code>, its table of contents is a <code>&lt;nav&gt;</code>, and its date is a <code>&lt;time&gt;</code>.</p>\n<hr data-more=\"\">\n<h3>What a post looks like</h3>\n<pre><code data-lang=\"html\">&lt;article id=\"hello-world\"&gt;\n  &lt;header&gt;\n    &lt;h2&gt;&lt;a href=\"#/hello-world\"&gt;Hello, world&lt;/a&gt;&lt;/h2&gt;\n    &lt;p&gt;&lt;time datetime=\"2026-08-01\"&gt;August 1, 2026&lt;/time&gt;&lt;/p&gt;\n  &lt;/header&gt;\n  &lt;!-- the post body --&gt;\n&lt;/article&gt;</code></pre>\n<h3>Why it matters</h3>\n<p>Semantic markup is easier for search engines and assistive technology to read, and it keeps the stored HTML small and readable. The posts you write contain plain paragraphs, headings and lists.</p>\n<h3>The exceptions</h3>\n<p>The editor toolbar comes from Pell, which uses a few classes of its own. It only exists while you are editing and never ends up in the saved file.</p>"
+    },
+    {
+      "slug": "where-the-snippet-ends",
+      "title": "Where the snippet ends",
+      "date": "2026-09-02",
+      "categories": [
+        "Writing"
+      ],
+      "html": "<p>A good snippet makes people want to read on. You decide where it ends.</p>\n<p>Place the cursor between two paragraphs and press the scissors button. A dashed line marks the break while you edit.</p>\n<hr data-more=\"\">\n<h3>No break, no link</h3>\n<p>If a post has no break, the whole post is shown on the home page and the <em>Read more</em> link is left out. That works well for short notes.</p>\n<h3>Only one break</h3>\n<p>Each post has at most one break. Adding a new one removes the old one.</p>"
+    },
+    {
+      "slug": "categories-and-tags",
+      "title": "Categories",
+      "date": "2026-08-20",
+      "categories": [
+        "Writing",
+        "Meta"
+      ],
+      "html": "<p>Type categories as a comma-separated list when editing a post. Each one becomes a link to a page that lists only the posts in that category.</p>\n<hr data-more=\"\">\n<h3>The categories page</h3>\n<p>The <em>Categories</em> link in the header lists every category with its number of posts. The list is regenerated whenever you save a post and is stored in the HTML, so search engines can follow it.</p>"
+    },
+    {
+      "slug": "hello-world",
+      "title": "Hello, world",
+      "date": "2026-08-01",
+      "categories": [
+        "Meta"
+      ],
+      "html": "<p>The first post. Scroll down on the home page and older posts load as you go, five at a time.</p>"
+    }
+  ]
+}

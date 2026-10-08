@@ -1,0 +1,18 @@
+{
+  "name": "quine-blog",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A single-file, self-editing blog. TypeScript sources compile into one HTML quine.",
+  "scripts": {
+    "build": "tsc --noEmit && node build.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/prismjs": "^1.26.6",
+    "esbuild": "^0.28.2",
+    "jsdom": "^29.1.1",
+    "prismjs": "^1.30.0",
+    "typescript": "^7.0.2"
+  }
+}

@@ -1,0 +1,179 @@
+/* Pico-flavoured, class-less theme. Every colour derives from --hue; light-dark() pairs each light value with its dark one. */
+:root {
+  --hue: 250;
+  --width: 46rem;
+  --radius: .375rem;
+  color-scheme: light dark;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --bg: light-dark(oklch(98.5% .005 var(--hue)), oklch(17% .015 var(--hue)));
+  --card: light-dark(#fff, oklch(21% .018 var(--hue)));
+  --fg: light-dark(oklch(32% .02 var(--hue)), oklch(84% .012 var(--hue)));
+  --heading: light-dark(oklch(22% .03 var(--hue)), oklch(95% .01 var(--hue)));
+  --muted: light-dark(oklch(50% .02 var(--hue)), oklch(68% .02 var(--hue)));
+  --border: light-dark(oklch(91% .012 var(--hue)), oklch(31% .02 var(--hue)));
+  --soft: light-dark(oklch(96% .015 var(--hue)), oklch(26% .025 var(--hue)));
+  --primary: light-dark(oklch(50% .18 var(--hue)), oklch(74% .13 var(--hue)));
+  --primary-hover: light-dark(oklch(42% .18 var(--hue)), oklch(82% .11 var(--hue)));
+  --primary-bg: light-dark(oklch(50% .18 var(--hue)), oklch(52% .16 var(--hue)));
+  --on-primary: #fff;
+  --danger: light-dark(#b42318, #ff8a80);
+  --shadow: light-dark(oklch(30% .05 var(--hue) / .09), oklch(0% 0 0 / .4));
+}
+[data-theme=light] { color-scheme: light }
+[data-theme=dark] { color-scheme: dark }
+
+*, ::before, ::after { box-sizing: border-box }
+[hidden] { display: none !important }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 1rem }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 400 1.0625rem/1.65 var(--font); overflow-wrap: break-word }
+body > header, main, body > nav, body > footer { width: min(100% - 2rem, var(--width)); margin-inline: auto }
+a { color: var(--primary); text-decoration: underline 1px transparent; text-underline-offset: .2em; transition: color .2s, text-decoration-color .2s }
+a:hover { color: var(--primary-hover); text-decoration-color: currentColor }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px }
+h1, h2, h3, h4 { color: var(--heading); line-height: 1.25; margin: 1.75em 0 .6em; font-weight: 700 }
+h2 { font-size: 1.65rem }
+h3 { font-size: 1.3rem }
+h4 { font-size: 1.1rem }
+p, ul, ol, blockquote, pre, figure, table { margin: 0 0 1rem }
+li + li { margin-top: .25rem }
+img, video { max-width: 100%; height: auto; border-radius: var(--radius) }
+blockquote { margin-inline: 0; padding: .25rem 1rem; border-left: .25rem solid var(--primary); color: var(--muted) }
+code, pre { font-family: var(--mono); font-size: .875em; background: var(--soft); border-radius: var(--radius) }
+code { padding: .125rem .375rem }
+pre { padding: 1rem; overflow: auto }
+pre code { padding: 0; background: none }
+hr { border: 0; border-top: 1px solid var(--border); margin: 2rem 0 }
+table { width: 100%; border-collapse: collapse }
+th, td { padding: .5rem; border-bottom: 1px solid var(--border); text-align: start }
+small { font-size: .85em; color: var(--muted) }
+button { font: inherit; font-size: .95rem; line-height: 1.25; padding: .6rem 1rem; border: 1px solid var(--primary-bg); border-radius: var(--radius); background: var(--primary-bg); color: var(--on-primary); cursor: pointer; transition: filter .2s, background .2s }
+button:hover { filter: brightness(1.12) }
+button.secondary { background: transparent; color: var(--fg); border-color: var(--border) }
+button.secondary:hover { background: var(--soft); filter: none }
+label { display: block; margin-bottom: 1rem; font-size: .95rem }
+input { display: block; width: 100%; margin-top: .25rem; font: inherit; padding: .6rem .8rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--fg) }
+fieldset { border: 0; padding: 0; margin: 0; min-width: 0 }
+
+/* Site header */
+body > header { padding: 1.5rem 0 1rem }
+body > header nav, body > header ul { display: flex; align-items: center; flex-wrap: wrap; gap: .25rem 1rem; margin: 0; padding: 0; list-style: none }
+body > header nav { justify-content: space-between }
+body > header li { margin: 0 }
+body > header h1 { margin: 0; font-size: 1.4rem }
+body > header h1 a { color: var(--heading) }
+body > header > p { margin: .25rem 0 0; color: var(--muted) }
+body > header > p:empty { display: none }
+body > header button { padding: .3rem .55rem; background: none; border-color: var(--border); color: var(--fg) }
+
+/* Posts */
+main > article, #categories { background: var(--card); border-radius: calc(var(--radius) * 2); box-shadow: 0 .125rem 1rem var(--shadow); padding: clamp(1.25rem, 4vw, 2.25rem); margin-bottom: 2rem }
+main > article > header h2 { margin: 0 0 .25rem }
+main > article > header h2 a { color: var(--heading) }
+main > article > header h2 a:hover { color: var(--primary) }
+main > article > header p { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; color: var(--muted); font-size: .9rem; margin-bottom: 1.25rem }
+a[rel=tag] { font-size: .8rem; padding: .05rem .6rem; border-radius: 1rem; background: var(--soft) }
+main > article > section > :first-child { margin-top: 0 }
+main > article > section > :last-child { margin-bottom: 0 }
+main > article > section hr[data-more] { display: none }
+main > article > footer { margin-top: 1rem; font-weight: 600 }
+main > article > footer a::after { content: " →" }
+main > h2 { margin: 0 0 1.25rem }
+#categories ul { columns: 14rem; padding-left: 1.25rem; margin: 0 }
+
+/* View states: every view is prerendered; CSS hides what the current view doesn't need */
+html:not([data-view=post]) main > article > section > hr[data-more] ~ *,
+html:not([data-view=post]) main > article > nav { display: none }
+main > article:not(:has(hr[data-more])) > footer, [data-view=post] main > article > footer { display: none }
+html:not([data-view=categories]) #categories { display: none }
+main:not(:has(> article))::before { content: "No posts yet. Use the ⋯ menu to write one."; display: block; padding: 3rem 0; text-align: center; color: var(--muted) }
+
+/* Table of contents: a box above the post on small screens, pinned to the right on wide ones */
+main > article > nav { font-size: .9rem; border: 1px solid var(--border); border-radius: var(--radius); padding: .75rem 1rem; margin-bottom: 1.5rem }
+main > article > nav:empty { display: none }
+main > article > nav p { margin: 0 0 .25rem }
+main > article > nav ol { list-style: none; margin: 0; padding: 0 }
+main > article > nav ol ol { padding-left: 1rem }
+main > article > nav li { margin: 0 }
+main > article > nav a { display: block; padding: .15rem 0; color: var(--muted) }
+main > article > nav a[aria-current] { color: var(--primary); font-weight: 600 }
+@media (min-width: 80rem) {
+  [data-view=post] main > article > nav { position: fixed; top: 6.5rem; left: calc(50% + var(--width) / 2 + 2rem); width: calc(50% - var(--width) / 2 - 4rem); max-width: 16rem; max-height: calc(100vh - 8rem); overflow: auto; margin: 0; padding: 0 0 0 1rem; border: 0; border-left: 1px solid var(--border); border-radius: 0 }
+}
+
+/* Code highlighting: tokens are painted with the CSS Custom Highlight API, colours rotate from --hue */
+:root {
+  --tok-comment: var(--muted);
+  --tok-punct: light-dark(oklch(50% .02 var(--hue)), oklch(70% .02 var(--hue)));
+  --tok-operator: light-dark(oklch(45% .06 var(--hue)), oklch(78% .05 var(--hue)));
+  --tok-keyword: light-dark(oklch(48% .2 calc(var(--hue) + 60)), oklch(76% .14 calc(var(--hue) + 60)));
+  --tok-string: light-dark(oklch(48% .13 calc(var(--hue) + 160)), oklch(80% .12 calc(var(--hue) + 160)));
+  --tok-number: light-dark(oklch(52% .16 calc(var(--hue) + 220)), oklch(80% .12 calc(var(--hue) + 220)));
+  --tok-function: light-dark(oklch(48% .16 calc(var(--hue) + 290)), oklch(80% .12 calc(var(--hue) + 290)));
+  --tok-tag: light-dark(oklch(48% .18 var(--hue)), oklch(76% .13 var(--hue)));
+  --tok-attr: light-dark(oklch(50% .14 calc(var(--hue) + 110)), oklch(80% .11 calc(var(--hue) + 110)));
+}
+::highlight(tok-comment) { color: var(--tok-comment) }
+::highlight(tok-punct) { color: var(--tok-punct) }
+::highlight(tok-operator) { color: var(--tok-operator) }
+::highlight(tok-keyword) { color: var(--tok-keyword) }
+::highlight(tok-string) { color: var(--tok-string) }
+::highlight(tok-number) { color: var(--tok-number) }
+::highlight(tok-function) { color: var(--tok-function) }
+::highlight(tok-tag) { color: var(--tok-tag) }
+::highlight(tok-attr) { color: var(--tok-attr) }
+pre:has(> code[data-lang]) { position: relative; padding-top: 1.75rem }
+pre > code[data-lang]::before { content: attr(data-lang); position: absolute; top: .4rem; right: .75rem; font: .7rem var(--font); text-transform: uppercase; letter-spacing: .05em; color: var(--muted) }
+
+/* Runtime-only UI */
+body > p[data-rt] { height: 1px; margin: 0 }
+body > nav { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 2rem; font-weight: 600 }
+body > nav a { max-width: 48% }
+body > aside { position: fixed; inset: auto 0 0; z-index: 10; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .5rem 1rem; padding: .75rem 1rem; background: var(--card); border-top: 1px solid var(--border); box-shadow: 0 -.125rem 1rem var(--shadow); font-size: .95rem }
+body > aside p { margin: 0 }
+body:has(> aside:not([hidden])) { padding-bottom: 6rem }
+
+/* "⋯" menu */
+body > header details { position: relative }
+body > header summary { list-style: none; cursor: pointer; padding: .1rem .55rem; border: 1px solid var(--border); border-radius: var(--radius); line-height: 1.4; font-weight: 700; user-select: none }
+body > header summary::-webkit-details-marker { display: none }
+body > header summary:hover, body > header details[open] summary { background: var(--soft) }
+body > header menu { position: absolute; right: 0; top: calc(100% + .375rem); z-index: 20; min-width: 12rem; margin: 0; padding: .375rem; list-style: none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 .5rem 1.5rem var(--shadow) }
+body > header menu li { margin: 0 }
+body > header menu button { display: block; width: 100%; padding: .5rem .75rem; text-align: start; background: none; border: 0; color: var(--fg) }
+body > header menu button:hover { background: var(--soft); filter: none }
+body > header menu li:last-child { display: flex; gap: .25rem; margin-top: .375rem; padding-top: .375rem; border-top: 1px solid var(--border) }
+body > header menu li:last-child button { flex: 1; padding: .4rem .25rem; text-align: center; font-size: .85rem; border-radius: calc(var(--radius) / 1.5); white-space: nowrap }
+body > header menu [aria-pressed=true] { background: var(--soft); color: var(--primary); font-weight: 600 }
+body > footer { padding: 1.5rem 0 3rem; border-top: 1px solid var(--border); color: var(--muted); font-size: .875rem; text-align: center }
+body > footer p { margin: .25rem 0 }
+
+dialog { width: min(100% - 2rem, 56rem); max-height: calc(100% - 2rem); padding: 0; border: 0; border-radius: calc(var(--radius) * 2); background: var(--card); color: var(--fg); box-shadow: 0 1rem 3rem var(--shadow) }
+dialog::backdrop { background: oklch(15% .02 250 / .55); backdrop-filter: blur(.15rem) }
+dialog form { padding: clamp(1rem, 3vw, 2rem) }
+dialog h2 { margin-top: 0 }
+dialog form > h3 { font-size: 1rem; margin: 1.5rem 0 .25rem }
+dialog fieldset { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0 1rem }
+dialog footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; margin-top: 1.25rem }
+dialog footer > :first-child { margin-right: auto }
+dialog [name=del] { color: var(--danger) }
+dialog output { font-weight: 600 }
+dialog form > ul { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 1rem; padding: 0; list-style: none }
+dialog form > ul li { display: inline-flex; align-items: center; gap: .35rem; margin: 0; padding: .2rem .25rem .2rem .7rem; border: 1px solid var(--border); border-radius: 1rem; font-size: .9rem }
+dialog form > ul button { padding: 0 .45rem; border: 0; border-radius: 1rem; background: none; color: var(--muted); font-size: 1rem; line-height: 1.4 }
+dialog form > ul button:hover { background: var(--soft); color: var(--danger); filter: none }
+input[name=hue] { appearance: none; height: .6rem; padding: 0; margin-top: .75rem; border: 0; border-radius: 1rem; background: linear-gradient(90deg in oklch longer hue, oklch(60% .15 0), oklch(60% .15 0)) }
+input[name=hue]::-webkit-slider-thumb { appearance: none; width: 1.25rem; height: 1.25rem; border-radius: 50%; background: var(--primary-bg); border: 3px solid var(--card); box-shadow: 0 0 0 1px var(--border) }
+input[name=hue]::-moz-range-thumb { width: 1.25rem; height: 1.25rem; border-radius: 50%; background: var(--primary-bg); border: 3px solid var(--card) }
+
+/* Pell editor (its class names are fixed by the library) */
+.pell { border: 1px solid var(--border); border-radius: var(--radius) }
+.pell-actionbar { display: flex; flex-wrap: wrap; gap: .125rem; padding: .25rem; border-bottom: 1px solid var(--border) }
+.pell-button { min-width: 2.25rem; padding: .35rem .5rem; border: 0; background: none; color: var(--fg) }
+.pell-button svg { display: block; margin: auto }
+.pell-button:disabled { opacity: .35; cursor: default; background: none }
+.pell-button:hover, .pell-button-selected { background: var(--soft); filter: none }
+.pell-content { min-height: 16rem; max-height: 55vh; overflow: auto; padding: 1rem; outline: 0 }
+.pell-content > :first-child { margin-top: 0 }
+.pell-content hr[data-more] { display: flex; justify-content: center; align-items: center; height: auto; overflow: visible; border: 0; background: repeating-linear-gradient(90deg, var(--primary) 0 6px, transparent 6px 10px) center / 100% 2px no-repeat }
+.pell-content hr[data-more]::after { content: "Read more \2702"; padding: 0 .5rem; background: var(--card); color: var(--primary); font-size: .8rem; line-height: 1.5 }

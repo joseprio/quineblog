@@ -34,7 +34,7 @@ Open `dist/index.html` and use the **⋯** menu next to *Categories*: **New post
 bottom of the page offers the download too. Upload the downloaded file to publish.
 
 - **✂** in the editor marks where the snippet on the home page ends.
-- Images (button, paste or drop) are inlined as data URLs; large ones are downscaled first.
+- Images (button, paste or drop, from a file or a pasted `data:image/…` URL) are inlined as data URLs; large ones are downscaled first.
 - **</>** makes a code block and asks for its language (`js`, `html`, `css`, …).
 - Categories are a comma-separated field per post.
 - **Settings** holds the blog title, description and theme hue.

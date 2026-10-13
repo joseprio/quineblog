@@ -63,6 +63,27 @@ async function insertImages(e: Editor, files: File[]) {
   }
 }
 
+const DATA_URL = /^data:image\/[\w.+-]+(;[\w=.+-]+)*,\S+$/i;
+
+/** Inserts an image given as a data URL, through the same downscaling as files. */
+async function insertDataURL(e: Editor, url: string) {
+  try {
+    const b = await (await fetch(url)).blob();
+    await insertImages(e, [new File([b], '', { type: b.type })]);
+  } catch {
+    alert('That data URL could not be read as an image.');
+  }
+}
+
+/** Insert image button: a pasted data URL, or files from disk when left empty. */
+function imageButton(e: Editor) {
+  const url = prompt('Paste an image data URL, or leave empty to choose a file:', '')?.replace(/\s+/g, '');
+  if (url === undefined) return;
+  if (!url) return void pickFiles('image/*', true).then(f => insertImages(e, f));
+  if (!DATA_URL.test(url)) return void alert('That is not an image data URL (data:image/…).');
+  insertDataURL(e, url);
+}
+
 /** Toggles a code block: turns the current block into one (asking for its language), or the code block back into paragraphs. */
 function codeBlock(e: Editor) {
   restoreSelection(e);
@@ -179,7 +200,7 @@ function editor(): Editor {
       { icon: '<code>`c`</code>', title: 'Inline code', active: ':not(pre) > code', result: () => inlineCode(e) },
       { icon: '&lt;/&gt;', title: 'Code block', active: 'pre', result: () => codeBlock(e) },
       'link',
-      { icon: '&#128247;', title: 'Insert image', result: () => { pickFiles('image/*', true).then(f => insertImages(e, f)) } },
+      { icon: '&#128247;', title: 'Insert image', result: () => imageButton(e) },
       'line',
       { icon: '&#9986;', title: 'Read more break (where the snippet ends)', result: () => insertMore(e) },
     ],
@@ -194,7 +215,9 @@ function editor(): Editor {
     const cd = ev.clipboardData!, files = [...cd.files], html = cd.getData('text/html');
     ev.preventDefault();
     if (files.some(f => f.type.startsWith('image/'))) return void insertImages(e, files);
-    if (!html) return void exec('insertText', cd.getData('text/plain'));
+    const text = cd.getData('text/plain');
+    if (DATA_URL.test(text.replace(/\s+/g, ''))) return void insertDataURL(e, text.replace(/\s+/g, ''));
+    if (!html) return void exec('insertText', text);
     exec('insertHTML', sanitize(html));
     // Try to inline pasted remote images; ones the server won't share (CORS) stay as links.
     for (const img of $$<HTMLImageElement>('img:not([src^="data:"])', e.content)) {

@@ -174,6 +174,11 @@ input[name=hue]::-moz-range-thumb { width: 1.25rem; height: 1.25rem; border-radi
 .pell-button code { padding: 0; background: none; font-size: .9em }
 .pell-button:disabled { opacity: .35; cursor: default; background: none }
 .pell-button:hover, .pell-button-selected { background: var(--soft); filter: none }
+.pell-dropdown { position: relative; display: flex }
+.pell-menu { position: absolute; left: 0; top: calc(100% + .25rem); z-index: 20; min-width: 10rem; margin: 0; padding: .25rem; list-style: none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 .5rem 1.5rem var(--shadow) }
+.pell-menu li { margin: 0 }
+.pell-menu button { display: block; width: 100%; padding: .4rem .75rem; text-align: start; white-space: nowrap; background: none; border: 0; color: var(--fg) }
+.pell-menu button:hover { background: var(--soft); filter: none }
 .pell-content { min-height: 16rem; max-height: 55vh; overflow: auto; padding: 1rem; outline: 0 }
 .pell-content > :first-child { margin-top: 0 }
 .pell-content hr[data-more] { display: flex; justify-content: center; align-items: center; height: auto; overflow: visible; border: 0; background: repeating-linear-gradient(90deg, var(--primary) 0 6px, transparent 6px 10px) center / 100% 2px no-repeat }

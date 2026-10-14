@@ -35,7 +35,7 @@ bottom of the page offers the download too. Upload the downloaded file to publis
 
 - **✂** in the editor marks where the snippet on the home page ends.
 - Images (button, paste or drop, from a file or a pasted `data:image/…` URL) are inlined as data URLs; large ones are downscaled first.
-- **</>** makes a code block and asks for its language (`js`, `html`, `css`, …).
+- **</>** makes a code block and **`c`** inline code; both ask for its language (`js`, `html`, `css`, …) to highlight it.
 - Categories are a comma-separated field per post.
 - **Settings** holds the blog title, description and theme hue.
 

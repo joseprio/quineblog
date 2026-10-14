@@ -1,4 +1,4 @@
-// Syntax highlighting. Prism tokenises <pre><code data-lang> blocks and the CSS Custom Highlight API
+// Syntax highlighting. Prism tokenises <code data-lang> (blocks and inline) and the CSS Custom Highlight API
 // paints the tokens, so the stored HTML never contains highlighting markup.
 //
 // Grammars live in the page as inert <script type="text/plain" data-prism-lang="id"> elements, so
@@ -133,25 +133,31 @@ const GROUPS: Record<string, string> = {
 };
 const supported = typeof CSS !== 'undefined' && 'highlights' in CSS;
 
-function textNodes(el: Node) {
-  const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), out: Text[] = [];
-  while (w.nextNode()) out.push(w.currentNode as Text);
+/** The text of a code element, piece by piece; a <br> (what Enter adds in the editor) counts as a newline. */
+function pieces(el: Node) {
+  const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT), out: Array<Text | HTMLBRElement> = [];
+  while (w.nextNode()) if (w.currentNode instanceof Text || w.currentNode instanceof HTMLBRElement) out.push(w.currentNode);
   return out;
 }
+const text = (p: Text | HTMLBRElement) => p instanceof Text ? p.data : '\n';
 
-/** Highlights the code blocks of the visible posts. */
+/** Highlights the code (blocks and inline) of the visible posts and of the open post editor. */
 export function highlight() {
   if (!supported) return;
   const groups = new Map<string, Range[]>();
-  for (const code of $$('main>article:not([hidden]) pre>code[data-lang]')) {
+  for (const code of $$('main>article:not([hidden]) code[data-lang], dialog[open] .pell-content code[data-lang]')) {
     const grammar = Prism.languages[code.dataset.lang!];
     if (!grammar) continue;
-    const nodes = textNodes(code);
+    const nodes = pieces(code);
+    if (!nodes.length) continue;
     let pos = 0;
-    const point = (offset: number): [Text, number] => {
-      for (const n of nodes) { if (offset <= n.length) return [n, offset]; offset -= n.length }
+    // A range boundary: inside a text node, or just before/after a <br>.
+    const at = (n: Text | HTMLBRElement, offset: number): [Node, number] =>
+      n instanceof Text ? [n, offset] : [n.parentNode!, [...n.parentNode!.childNodes].indexOf(n) + offset];
+    const point = (offset: number): [Node, number] => {
+      for (const n of nodes) { const len = text(n).length; if (offset <= len) return at(n, offset); offset -= len }
       const last = nodes[nodes.length - 1];
-      return [last, last.length];
+      return at(last, text(last).length);
     };
     const add = (len: number, group?: string) => {
       if (group && len) {
@@ -170,7 +176,7 @@ export function highlight() {
         else walk([t.content].flat() as Stream, group);
       }
     };
-    walk(Prism.tokenize(nodes.map(n => n.data).join(''), grammar));
+    walk(Prism.tokenize(nodes.map(text).join(''), grammar));
   }
   for (const g of new Set(Object.values(GROUPS))) {
     const ranges = groups.get(g);

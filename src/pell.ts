@@ -4,6 +4,7 @@
 // - states refresh on every selection change, including arrow keys;
 // - toolbar clicks don't take focus (and the selection) away from the text;
 // - its own undo/redo history (the browser's misses changes made by direct DOM edits);
+// - buttons can open a dropdown of choices (`menu`);
 // - only the default actions the blog uses are kept.
 
 export interface Action {
@@ -15,6 +16,11 @@ export interface Action {
   result: (editor: Editor) => unknown;
 }
 
+/** A button that opens a dropdown of choices instead of acting directly. */
+export interface MenuAction extends Omit<Action, 'result'> {
+  menu: Array<{ label: string; result: Action['result'] }>;
+}
+
 /** What init() returns, also passed to action results. */
 export interface Editor { content: HTMLElement; undo(): void; redo(): void; resetHistory(): void }
 /** A default action by name, with some of its fields replaced. */
@@ -22,7 +28,7 @@ export type Override = Partial<Action> & { name: keyof typeof defaults };
 
 export interface Options {
   element: HTMLElement;
-  actions: Array<keyof typeof defaults | Action | Override>;
+  actions: Array<keyof typeof defaults | Action | MenuAction | Override>;
   defaultParagraphSeparator?: string;
   onChange?: (html: string) => void;
 }
@@ -56,7 +62,7 @@ interface State { html: string; sel: [number[], number, number[], number] | null
 const GROUP_MS = 1000; // typing closer together than this is one undo step
 
 export function init({ element, actions, defaultParagraphSeparator = 'div', onChange }: Options): Editor {
-  const list: Action[] = actions.map(a => typeof a === 'string' ? { name: a, ...defaults[a] } : 'name' in a && a.name! in defaults ? { ...defaults[a.name as keyof typeof defaults], ...a } : a as Action);
+  const list: Array<Action | MenuAction> = actions.map(a => typeof a === 'string' ? { name: a, ...defaults[a] } : 'name' in a && a.name! in defaults ? { ...defaults[a.name as keyof typeof defaults], ...a } : a as Action | MenuAction);
 
   const actionbar = document.createElement('div');
   actionbar.className = 'pell-actionbar';
@@ -160,22 +166,62 @@ export function init({ element, actions, defaultParagraphSeparator = 'div', onCh
   const states: Array<() => void> = [];
   const refresh = () => states.forEach(f => f());
 
+  /** Runs an action as one undo step of its own. */
+  const run = (name: string | undefined, result: Action['result']) => {
+    const own = name !== 'undo' && name !== 'redo';
+    if (own) { observer.takeRecords(); record(); boundary = true }
+    if (result(ed)) content.focus();
+    if (own) { observer.takeRecords(); record(); boundary = true }
+    refresh();
+  };
+  let closeMenu = () => {};
+
   for (const action of list) {
     const button = document.createElement('button');
     button.className = 'pell-button';
     button.innerHTML = action.icon;
     button.title = action.title;
     button.type = 'button';
-    button.onclick = () => {
-      if (action.name !== 'undo' && action.name !== 'redo') { observer.takeRecords(); record(); boundary = true }
-      if (action.result(ed)) content.focus();
-      if (action.name !== 'undo' && action.name !== 'redo') { observer.takeRecords(); record(); boundary = true } // one step per action
-      refresh();
-    };
+    if ('menu' in action) {
+      // Wrapped so the dropdown can sit under its button; it stays inside the action bar, so clicks keep the selection.
+      const wrap = document.createElement('span'), menu = document.createElement('menu');
+      wrap.className = 'pell-dropdown';
+      menu.className = 'pell-menu';
+      menu.hidden = true;
+      button.setAttribute('aria-haspopup', 'menu');
+      button.setAttribute('aria-expanded', 'false');
+      const show = (open: boolean) => { menu.hidden = !open; button.setAttribute('aria-expanded', String(open)); button.classList.toggle('pell-button-selected', open) };
+      for (const item of action.menu) {
+        const li = document.createElement('li'), b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = item.label;
+        b.onclick = () => { show(false); run(action.name, item.result) };
+        li.append(b);
+        menu.append(li);
+      }
+      button.onclick = () => {
+        const open = menu.hidden === true;
+        closeMenu();
+        show(open);
+        if (open) closeMenu = () => show(false);
+      };
+      wrap.append(button, menu);
+      actionbar.append(wrap);
+      continue;
+    }
+    button.onclick = () => { closeMenu(); run(action.name, action.result) };
     if (action.name === 'undo' || action.name === 'redo') buttons[action.name] = button;
     if (action.active) { const sel = action.active; states.push(() => button.classList.toggle('pell-button-selected', within(sel))) }
     actionbar.append(button);
   }
+  // Dropdowns close on clicks elsewhere and on Escape (which then doesn't also close the surrounding dialog).
+  document.addEventListener('click', e => { if (!(e.target as Element).closest?.('.pell-dropdown')) closeMenu() });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape' || !actionbar.querySelector('.pell-menu:not([hidden])')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    closeMenu();
+  }, true);
   document.addEventListener('selectionchange', refresh);
   updateButtons();
 

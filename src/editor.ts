@@ -4,7 +4,7 @@ import { $, $$, esc, fields, link, mk, pickFiles, slugify, today } from './dom';
 import { meta, normalizePre, readPost, rebuild, sanitize, writePost } from './content';
 import { go } from './views';
 import { setDirty } from './state';
-import { languageNames } from './code';
+import { highlight, languageNames } from './code';
 
 interface Editor {
   dialog: HTMLDialogElement; form: HTMLFormElement; F: Record<string, HTMLInputElement>;
@@ -75,13 +75,23 @@ async function insertDataURL(e: Editor, url: string) {
   }
 }
 
-/** Insert image button: a pasted data URL, or files from disk when left empty. */
-function imageButton(e: Editor) {
-  const url = prompt('Paste an image data URL, or leave empty to choose a file:', '')?.replace(/\s+/g, '');
-  if (url === undefined) return;
-  if (!url) return void pickFiles('image/*', true).then(f => insertImages(e, f));
+/** Asks for an image data URL and inserts it. */
+function imageFromDataURL(e: Editor) {
+  const url = prompt('Paste an image data URL (data:image/…):', '')?.replace(/\s+/g, '');
+  if (!url) return;
   if (!DATA_URL.test(url)) return void alert('That is not an image data URL (data:image/…).');
   insertDataURL(e, url);
+}
+
+/** Asks which language some code is in: its id, '' for none, or null when cancelled. Defaults to the last answer (remembered per browser). */
+function askLanguage() {
+  let last = '';
+  try { last = localStorage.getItem('codeLang') ?? '' } catch { /* storage blocked */ }
+  const lang = prompt(`Code language, or empty for none.\nInstalled: ${languageNames().join(', ') || 'none'}`, last);
+  if (lang === null) return null;
+  const id = lang.trim().toLowerCase(), ok = /^[\w+#-]{1,40}$/.test(id) ? id : '';
+  try { localStorage.setItem('codeLang', ok) } catch { /* storage blocked */ }
+  return ok;
 }
 
 /** Toggles a code block: turns the current block into one (asking for its language), or the code block back into paragraphs. */
@@ -109,15 +119,14 @@ function codeBlock(e: Editor) {
     getSelection()!.addRange(r);
     return;
   }
-  const lang = prompt(`Code language, or empty for none.\nInstalled: ${languageNames().join(', ') || 'none'}`, '');
+  const lang = askLanguage();
   if (lang === null) return;
   restoreSelection(e);
   exec('formatBlock', '<pre>');
   pre = inPre();
   if (!pre) return;
   // Same shape as saved posts (<pre><code data-lang>), so the language label and styles apply while editing.
-  const id = lang.trim().toLowerCase();
-  if (id) pre.dataset.lang = id;
+  if (lang) pre.dataset.lang = lang;
   normalizePre(pre);
   const r = document.createRange();
   r.selectNodeContents(pre.firstChild!);
@@ -126,7 +135,7 @@ function codeBlock(e: Editor) {
   getSelection()!.addRange(r);
 }
 
-/** Toggles inline code: unwraps the <code> around the caret, or wraps the selection (or a placeholder to type over) in one. */
+/** Toggles inline code: unwraps the <code> around the caret, or wraps the selection (or a placeholder to type over) in one, asking for its language. */
 function inlineCode(e: Editor) {
   restoreSelection(e);
   const s = getSelection()!, n = s.anchorNode, el = n instanceof Element ? n : n?.parentElement;
@@ -142,8 +151,12 @@ function inlineCode(e: Editor) {
   // Inserted as nodes: execCommand('insertHTML') would turn the surrounding spaces into &nbsp;.
   const r = s.getRangeAt(0), block = el?.closest('p,li,h3,h4,blockquote');
   if (block && !block.contains(r.endContainer)) r.setEndAfter(block.lastChild!); // keep to one paragraph
+  const lang = askLanguage();
+  if (lang === null) return;
+  restoreSelection(e);
   const added = document.createElement('code');
   added.textContent = r.toString() || 'code';
+  if (lang) added.dataset.lang = lang;
   r.deleteContents();
   r.insertNode(added);
   select(added);
@@ -200,12 +213,19 @@ function editor(): Editor {
       { icon: '<code>`c`</code>', title: 'Inline code', active: ':not(pre) > code', result: () => inlineCode(e) },
       { icon: '&lt;/&gt;', title: 'Code block', active: 'pre', result: () => codeBlock(e) },
       'link',
-      { icon: '&#128247;', title: 'Insert image', result: () => imageButton(e) },
+      { icon: '&#128247;', title: 'Insert image', menu: [
+        { label: 'From file…', result: () => { pickFiles('image/*', true).then(f => insertImages(e, f)) } },
+        { label: 'From data URL…', result: () => imageFromDataURL(e) },
+      ] },
       'line',
       { icon: '&#9986;', title: 'Read more break (where the snippet ends)', result: () => insertMore(e) },
     ],
   });
   e.content = e.pell.content;
+  // Highlight code while editing too, shortly after each change (typing, toolbar actions, pastes).
+  let pending = 0;
+  new MutationObserver(() => { clearTimeout(pending); pending = setTimeout(highlight, 150) })
+    .observe(e.content, { childList: true, subtree: true, characterData: true, attributes: true });
 
   document.addEventListener('selectionchange', () => {
     const s = getSelection();
@@ -275,4 +295,5 @@ export function openEditor(a?: HTMLElement) {
   e.pell!.resetHistory();
   F.del.hidden = !a;
   e.dialog.showModal();
+  highlight();
 }

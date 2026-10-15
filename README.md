@@ -39,7 +39,8 @@ bottom of the page offers the download too. Upload the downloaded file to publis
   In a table, **Tab** and **Shift+Tab** move between cells, and **Tab** in the last cell adds a row.
 - **</>** makes a code block and **`c`** inline code; both ask for its language (`js`, `html`, `css`, …) to highlight it.
 - Categories are a comma-separated field per post.
-- **Settings** holds the blog title, description and theme hue.
+- **Settings** holds the blog title, description, author, favicon URL and theme hue. New blogs start with a Q as a
+  `data:` URL; an empty favicon URL removes the icon.
 - **Download HTML** saves pure ASCII: other characters become character references in the HTML and `\u` / CSS escapes
   in scripts and styles, so the file reads the same whatever encoding a server or editor assumes.
 

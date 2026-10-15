@@ -16,6 +16,7 @@ function build() {
 <label>Blog title<input name="title" required></label>
 <label>Description<input name="desc"></label>
 <label>Author<input name="author" placeholder="Optional; shown in the footer and search results"></label>
+<label>Favicon URL<input name="favicon" placeholder="Optional; e.g. https://example.com/icon.png or favicon.ico"></label>
 <label>Theme hue: <output></output><input name="hue" type="range" min="0" max="359"></label>
 <h3>Code languages</h3>
 <p><small>Prism grammars stored in this page. Changes apply right away.</small></p>
@@ -75,7 +76,7 @@ function build() {
   d.addEventListener('cancel', revert);
   form.onsubmit = e => {
     e.preventDefault();
-    setSite({ title: F.title.value, description: F.desc.value, author: F.author.value, hue: Number(F.hue.value) });
+    setSite({ title: F.title.value, description: F.desc.value, author: F.author.value, favicon: F.favicon.value, hue: Number(F.hue.value) });
     rebuild();
     setDirty(true);
     d.close();
@@ -160,6 +161,7 @@ export function openSettings() {
   F.title.value = s.title;
   F.desc.value = s.description;
   F.author.value = s.author ?? '';
+  F.favicon.value = s.favicon ?? '';
   F.hue.value = String(s.hue);
   $<HTMLOutputElement>('output', dialog).value = String(s.hue);
   F.lang.value = '';

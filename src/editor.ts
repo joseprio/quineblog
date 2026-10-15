@@ -223,7 +223,8 @@ function tablePicker(e: Editor, pick: (result: () => void) => void) {
     for (const x of grid.children as HTMLCollectionOf<HTMLButtonElement>) x.classList.toggle('on', +x.dataset.r! <= r && +x.dataset.c! <= c);
     label.textContent = b ? `${r} × ${c}` : hint;
   };
-  for (const t of ['mouseover', 'focusin']) grid.addEventListener(t, ev => mark(cell(ev.target)));
+  // Only squares update the selection: the gaps between them would otherwise clear it for a moment, making it flash.
+  for (const t of ['mouseover', 'focusin']) grid.addEventListener(t, ev => { const b = cell(ev.target); if (b) mark(b) });
   grid.onmouseleave = () => mark(grid.contains(document.activeElement) ? document.activeElement as HTMLButtonElement : null);
   grid.onclick = ev => {
     const b = cell(ev.target);

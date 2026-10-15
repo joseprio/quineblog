@@ -5,7 +5,7 @@ import { $, $$, esc, fmtDate, link, mk, root, slugify, today } from './dom';
 import { type Lang, languages, setLanguages } from './code';
 
 export interface Post { slug: string; title: string; date: string; categories: string[]; html: string }
-export interface Site { title: string; description: string; author?: string; hue: number; lang: string }
+export interface Site { title: string; description: string; author?: string; favicon?: string; hue: number; lang: string }
 export interface BlogData { format: 'quine-blog'; version: number; generator?: string; site: Site; posts: Post[]; languages?: Lang[] }
 
 export const DATA_VERSION = 1;
@@ -29,11 +29,14 @@ export const meta = (a: HTMLElement): Meta => ({
 export const readPost = (a: HTMLElement): Post => ({ ...meta(a), html: $('section', a).innerHTML.trim() });
 export const inCategory = (a: HTMLElement, cat: string) => meta(a).categories.some(c => slugify(c) === cat);
 
+const icon = () => document.querySelector<HTMLLinkElement>('link[rel=icon]');
+
 export function site(): Site {
   return {
     title: $('body>header h1 a').textContent!.trim(),
     description: $('body>header>p').textContent!.trim(),
     author: $<HTMLMetaElement>('meta[name=author]')?.content ?? '',
+    favicon: icon()?.getAttribute('href') ?? '',
     hue: Number(root.style.getPropertyValue('--hue')) || 250,
     lang: root.lang || 'en',
   };
@@ -48,6 +51,15 @@ export function setSite(s: Partial<Site>) {
     if (!name) tag?.remove();
     else if (tag) tag.content = name;
     else $('meta[name=description]').after(Object.assign(document.createElement('meta'), { name: 'author', content: name }));
+  }
+  if (typeof s.favicon === 'string') {
+    // New pages start with a Q as a data URL. The tag only exists when there is an icon; unsafe URLs are ignored.
+    const url = s.favicon.trim(), link = icon();
+    if (!url) link?.remove();
+    else if (!/^\s*(javascript|vbscript|data:(?!image\/))/i.test(url)) {
+      if (link) link.href = url;
+      else $('meta[name=generator]').after(Object.assign(document.createElement('link'), { rel: 'icon', href: url }));
+    }
   }
   if (Number.isFinite(s.hue)) root.style.setProperty('--hue', String(Math.round(s.hue!) % 360));
   if (typeof s.lang === 'string' && /^[a-z]{2,3}(-[\w]+)*$/i.test(s.lang)) root.lang = s.lang;
@@ -221,8 +233,6 @@ export function rebuild() {
   $<HTMLMetaElement>('meta[name=description]').content = s.description;
   $<HTMLMetaElement>('meta[property="og:description"]').content = s.description;
   $<HTMLMetaElement>('meta[property="og:title"]').content = s.title;
-  $<HTMLLinkElement>('link[rel=icon]').href = 'data:image/svg+xml,' + encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="hsl(${s.hue} 65% 50%)"/><path d="M9 11h14M9 16h14M9 21h9" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>`);
   // "© <year> <author>" only when there is an author; exportHTML() stamps the year.
   const copyright = $('body>footer time')?.parentElement;
   if (!s.author) copyright?.remove();

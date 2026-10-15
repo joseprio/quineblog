@@ -16,13 +16,11 @@ function build() {
 <label>Blog title<input name="title" required></label>
 <label>Description<input name="desc"></label>
 <label>Author<input name="author" placeholder="Optional; shown in the footer and search results"></label>
-<label>Favicon URL<input name="favicon" placeholder="Optional; e.g. https://example.com/icon.png or favicon.ico"></label>
+<label>Favicon URL<span class="favicon"><input name="favicon" placeholder="Optional; e.g. https://example.com/icon.png or favicon.ico"><img alt="" hidden></span></label>
 <label>Theme hue: <output></output><input name="hue" type="range" min="0" max="359"></label>
 <h3>Code languages</h3>
-<p><small>Prism grammars stored in this page. Changes apply right away.</small></p>
 <ul></ul>
-<label>Add a language<input name="lang" placeholder="e.g. python, typescript, bash"></label>
-<p><button type="button" name="cdn" class="secondary">Download from jsDelivr</button> <button type="button" name="langfile" class="secondary">Add from file…</button></p>
+<p><button type="button" name="cdn" class="secondary">Download from jsDelivr…</button> <button type="button" name="langfile" class="secondary">Add from file…</button></p>
 <footer><span><button type="button" name="export" class="secondary">Export data</button> <button type="button" name="import" class="secondary">Import data</button> <details><summary>Restore</summary><menu></menu></details> <button type="button" name="del" class="secondary">Delete all posts</button></span><button type="button" name="cancel" class="secondary">Cancel</button><button>Apply</button></footer>
 </form>`);
   document.body.append(d);
@@ -43,13 +41,12 @@ function build() {
     removeLanguages([id, ...deps]);
     langsChanged();
   };
-  const addCDN = async () => {
-    const name = F.lang.value.trim();
-    if (!name) return F.lang.focus();
+  F.cdn.onclick = async () => {
+    const name = prompt('Language to download (e.g. python, typescript, bash):')?.trim();
+    if (!name) return;
     F.cdn.disabled = true;
     try {
       const added = await addFromCDN(name);
-      F.lang.value = '';
       if (!added.length) alert(`${name} is already installed.`);
       langsChanged();
     } catch (err) {
@@ -58,8 +55,6 @@ function build() {
       F.cdn.disabled = false;
     }
   };
-  F.cdn.onclick = addCDN;
-  F.lang.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); addCDN() } };
   F.langfile.onclick = async () => {
     const [file] = await pickFiles('.js,text/javascript');
     if (!file) return;
@@ -70,6 +65,16 @@ function build() {
     langsChanged();
   };
   showLangs = renderLangs;
+
+  // Favicon preview: hidden while the field is empty or the image doesn't load.
+  const icon = $<HTMLImageElement>('.favicon img', form);
+  icon.onload = () => { icon.hidden = false };
+  icon.onerror = () => { icon.hidden = true };
+  F.favicon.oninput = () => {
+    const url = F.favicon.value.trim();
+    icon.hidden = true;
+    if (url) icon.src = url; else icon.removeAttribute('src');
+  };
 
   F.hue.oninput = () => { root.style.setProperty('--hue', F.hue.value); out.value = F.hue.value };
   F.cancel.onclick = () => { revert(); d.close() };
@@ -162,9 +167,9 @@ export function openSettings() {
   F.desc.value = s.description;
   F.author.value = s.author ?? '';
   F.favicon.value = s.favicon ?? '';
+  F.favicon.dispatchEvent(new Event('input'));
   F.hue.value = String(s.hue);
   $<HTMLOutputElement>('output', dialog).value = String(s.hue);
-  F.lang.value = '';
   showLangs();
   dialog.showModal();
 }

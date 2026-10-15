@@ -171,7 +171,10 @@ dialog footer menu button { display: block; width: 100%; padding: .5rem .75rem; 
 dialog footer menu button:hover { background: var(--soft); filter: none }
 dialog footer menu button:disabled { opacity: .5; cursor: default; background: none }
 dialog output { font-weight: 600 }
-dialog form > ul { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 1rem; padding: 0; list-style: none }
+dialog .favicon { display: flex; align-items: center; gap: .75rem; margin-top: .25rem }
+dialog .favicon input { margin: 0 }
+dialog .favicon img { width: 2rem; height: 2rem; flex: none; object-fit: contain; border-radius: 0 }
+dialog form > ul { display: flex; flex-wrap: wrap; gap: .5rem; margin: .5rem 0 1rem; padding: 0; list-style: none }
 dialog form > ul li { display: inline-flex; align-items: center; gap: .35rem; margin: 0; padding: .2rem .25rem .2rem .7rem; border: 1px solid var(--border); border-radius: 1rem; font-size: .9rem }
 dialog form > ul button { padding: 0 .45rem; border: 0; border-radius: 1rem; background: none; color: var(--muted); font-size: 1rem; line-height: 1.4 }
 dialog form > ul button:hover { background: var(--soft); color: var(--danger); filter: none }

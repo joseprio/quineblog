@@ -1,9 +1,10 @@
-// Blog settings dialog: title, description, theme hue, code languages, and JSON import/export of all content.
+// Blog settings dialog: title, description, theme hue, code languages, JSON import/export of all content and restoring snapshots.
 import { $, esc, fields, mk, pickFiles, root, saveFile, slugify } from './dom';
 import { exportData, importData, posts, rebuild, setSite, site } from './content';
 import { go, route } from './views';
 import { setDirty } from './state';
 import { addFromCDN, addFromFile, dependents, highlight, languages, removeLanguages } from './code';
+import { clearSnapshots, newSession, restore, snapshots } from './snapshots';
 
 let dialog: HTMLDialogElement | undefined;
 let savedHue = 250;
@@ -21,7 +22,7 @@ function build() {
 <ul></ul>
 <label>Add a language<input name="lang" placeholder="e.g. python, typescript, bash"></label>
 <p><button type="button" name="cdn" class="secondary">Download from jsDelivr</button> <button type="button" name="langfile" class="secondary">Add from file…</button></p>
-<footer><span><button type="button" name="export" class="secondary">Export data</button> <button type="button" name="import" class="secondary">Import data</button> <button type="button" name="del" class="secondary">Delete all posts</button></span><button type="button" name="cancel" class="secondary">Cancel</button><button>Apply</button></footer>
+<footer><span><button type="button" name="export" class="secondary">Export data</button> <button type="button" name="import" class="secondary">Import data</button> <details><summary>Restore</summary><menu></menu></details> <button type="button" name="del" class="secondary">Delete all posts</button></span><button type="button" name="cancel" class="secondary">Cancel</button><button>Apply</button></footer>
 </form>`);
   document.body.append(d);
   const form = $<HTMLFormElement>('form', d), F = fields(form), out = $<HTMLOutputElement>('output', form);
@@ -93,15 +94,57 @@ function build() {
       alert(`Import failed: ${(err as Error).message}`);
       return;
     }
+    newSession(); // keeps the snapshot from before the import
     setDirty(true);
     d.close();
     go('#/');
   };
+
+  // Restore: a dropdown of this page's automatic snapshots, newest first.
+  const restoreMenu = $<HTMLDetailsElement>('details', form), snaps = $('menu', restoreMenu);
+  const when = (date: Date) => date.toLocaleString(root.lang || 'en', { dateStyle: 'medium', timeStyle: 'medium' });
+  restoreMenu.ontoggle = () => {
+    if (!restoreMenu.open) return;
+    const list = snapshots();
+    snaps.innerHTML = (list.map(s => `<li><button type="button" data-key="${esc(s.key)}">${esc(when(s.date))} <small>${s.posts} post${s.posts === 1 ? '' : 's'}${s.current ? ', this session' : ''}</small></button></li>`).join('')
+      || '<li><button type="button" disabled>No snapshots yet</button></li>')
+      + `<li><button type="button" name="clear"${list.length ? '' : ' disabled'}>Clear all snapshots</button></li>`;
+  };
+  snaps.onclick = e => {
+    const b = (e.target as Element).closest('button');
+    if (!b || b.disabled) return;
+    restoreMenu.open = false;
+    if (b.name === 'clear') {
+      if (confirm('Delete all saved snapshots of this blog?')) clearSnapshots();
+      return;
+    }
+    const s = snapshots().find(x => x.key === b.dataset.key);
+    if (!s || !confirm(`Restore the snapshot from ${when(s.date)}? It replaces all posts and settings on this page.`)) return;
+    try {
+      restore(s.key);
+    } catch (err) {
+      alert(`Restore failed: ${(err as Error).message}`);
+      return;
+    }
+    d.close();
+    go('#/');
+  };
+  // Close like a menu: on outside clicks, and on Escape without also closing the dialog.
+  d.addEventListener('click', e => { if (!restoreMenu.contains(e.target as Node)) restoreMenu.open = false });
+  restoreMenu.addEventListener('keydown', e => {
+    if (e.key !== 'Escape' || !restoreMenu.open) return;
+    e.preventDefault();
+    e.stopPropagation();
+    restoreMenu.open = false;
+    $('summary', restoreMenu).focus();
+  });
+
   F.del.onclick = () => {
     const n = posts().length;
     if (!n || !confirm(`Delete all ${n} post${n === 1 ? '' : 's'}? Settings and code languages are kept.`)) return;
     posts().forEach(p => p.remove());
     revert();
+    newSession(); // keeps the snapshot from before the deletion
     rebuild();
     setDirty(true);
     d.close();

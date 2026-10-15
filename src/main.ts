@@ -3,6 +3,7 @@ import { exportData, exportHTML, importData, rebuild } from './content';
 import { routeHooks, startRouter } from './views';
 import { startAuthor } from './author';
 import { highlight, loadGrammars } from './code';
+import { startSnapshots } from './snapshots';
 
 // Exposed for the build step and for scripting from the console.
 Object.assign(window, { quine: { exportHTML, exportData, importData } });
@@ -11,4 +12,5 @@ loadGrammars();
 routeHooks.push(highlight);
 rebuild();
 startAuthor();
+startSnapshots();
 startRouter();

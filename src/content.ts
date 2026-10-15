@@ -93,6 +93,7 @@ export function clean(node: ParentNode) {
       if (bad) el.removeAttribute(name);
     }
     if (tag === 'P' && !el.textContent!.trim() && !el.querySelector('img')) el.remove();
+    if ((tag === 'TD' || tag === 'TH') && el.childNodes.length === 1 && el.firstChild!.nodeName === 'BR') el.firstChild!.remove(); // the editor's placeholder
     if (tag === 'PRE') normalizePre(el);
   }
 }
@@ -270,7 +271,19 @@ export function importData(input: unknown) {
   rebuild();
 }
 
-/** Serialises the page as a clean, prerendered HTML file: the quine step. */
+/**
+ * Escapes the non-ASCII characters in script or style source: `\uXXXX` for JS and JSON (characters above U+FFFF as surrogate pairs,
+ * which also work in strings, templates and regular expressions), `\XXXXXX` for CSS.
+ */
+function asciiSource(src: string, css: boolean) {
+  // A non-ASCII character after an odd number of backslashes is itself escaped ("\é" means "é"), so that backslash goes.
+  const fix = (slashes: string) => slashes.slice(slashes.length % 2);
+  return css
+    ? src.replace(/(\\*)([^\0-\x7f])/gu, (_, s: string, ch: string) => fix(s) + '\\' + ch.codePointAt(0)!.toString(16).padStart(6, '0'))
+    : src.replace(/(\\*)([^\0-\x7f])/g, (_, s: string, ch: string) => fix(s) + '\\u' + ch.charCodeAt(0).toString(16).padStart(4, '0'));
+}
+
+/** Serialises the page as a clean, prerendered HTML file: the quine step. The file is pure ASCII, so no encoding can garble it. */
 export function exportHTML(): string {
   const c = root.cloneNode(true) as HTMLElement, body = $('body', c);
   $$('[data-rt]', c).forEach(e => e.remove());
@@ -283,5 +296,7 @@ export function exportHTML(): string {
   if (year) year.textContent = String(new Date().getFullYear()); // © year of generation
   while (body.lastChild?.nodeType === Node.TEXT_NODE && !body.lastChild.textContent!.trim()) body.lastChild.remove();
   body.append('\n');
-  return '<!doctype html>\n' + c.outerHTML + '\n';
+  // Scripts and styles are raw text, where character references don't work: escape them in their own syntax first.
+  $$('script,style', c).forEach(e => (e.textContent = asciiSource(e.textContent!, e.tagName === 'STYLE')));
+  return ('<!doctype html>\n' + c.outerHTML + '\n').replace(/[^\0-\x7f]/gu, ch => `&#x${ch.codePointAt(0)!.toString(16).toUpperCase()};`);
 }

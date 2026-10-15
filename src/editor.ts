@@ -1,5 +1,5 @@
-// Post editor: a <dialog> around Pell, with inlined images and a "read more" marker.
-import { exec, init, type Editor as Pell } from './pell';
+// Post editor: a <dialog> around Pell, with inlined images, tables and a "read more" marker.
+import { exec, init, svg, type Editor as Pell } from './pell';
 import { $, $$, esc, fields, link, mk, pickFiles, slugify, today } from './dom';
 import { meta, normalizePre, readPost, rebuild, sanitize, writePost } from './content';
 import { go } from './views';
@@ -162,6 +162,84 @@ function inlineCode(e: Editor) {
   select(added);
 }
 
+/** Puts the caret at the end of a table cell (at its start when empty, which browsers place more reliably). */
+function caretIn(cell: Element) {
+  const r = document.createRange();
+  r.selectNodeContents(cell);
+  r.collapse(!cell.textContent!.trim());
+  getSelection()!.removeAllRanges();
+  getSelection()!.addRange(r);
+}
+
+/** Inserts a table after the top-level block holding the caret (or in place of an empty paragraph); its first row is the header. */
+function insertTable(e: Editor, rows: number, cols: number) {
+  restoreSelection(e);
+  const s = getSelection()!;
+  let block: Node | null = s.rangeCount ? s.getRangeAt(0).startContainer : null;
+  while (block && block.parentNode !== e.content) block = block.parentNode;
+  const row = (tag: string) => `<tr>${`<${tag}><br></${tag}>`.repeat(cols)}</tr>`;
+  const table = document.createElement('table');
+  table.innerHTML = `<thead>${row('th')}</thead>${rows > 1 ? `<tbody>${row('td').repeat(rows - 1)}</tbody>` : ''}`;
+  if (block instanceof HTMLParagraphElement && !block.textContent!.trim() && !block.querySelector('img')) block.replaceWith(table);
+  else e.content.insertBefore(table, block ? block.nextSibling : null);
+  // Keep somewhere to type below the table; empty paragraphs are dropped on save.
+  if (!(table.nextSibling instanceof Element)) table.after(Object.assign(document.createElement('p'), { innerHTML: '<br>' }));
+  caretIn($('th', table));
+}
+
+/** Tab and Shift+Tab move between table cells; Tab in the last cell adds a row. */
+function tableTab(e: Editor, ev: KeyboardEvent) {
+  if (ev.key !== 'Tab' || ev.ctrlKey || ev.altKey || ev.metaKey) return;
+  const n = getSelection()?.anchorNode, cell = (n instanceof Element ? n : n?.parentElement)?.closest('td,th');
+  const table = cell?.closest('table');
+  if (!cell || !table || !e.content.contains(table)) return;
+  ev.preventDefault();
+  const cells = $$('td,th', table), i = cells.indexOf(cell as HTMLElement) + (ev.shiftKey ? -1 : 1);
+  if (i < 0) return;
+  if (i < cells.length) return caretIn(cells[i]);
+  const tbody = $(':scope>tbody', table) ?? table.appendChild(document.createElement('tbody')), tr = document.createElement('tr');
+  tr.innerHTML = '<td><br></td>'.repeat((cell.parentElement as HTMLTableRowElement).cells.length);
+  tbody.append(tr);
+  caretIn(tr.cells[0]);
+}
+
+const GRID = 8;
+/** The table button's dropdown: a grid of squares; pointing at one picks that many rows (the first is the header) and columns. */
+function tablePicker(e: Editor, pick: (result: () => void) => void) {
+  const box = document.createElement('div'), grid = document.createElement('div'), label = document.createElement('p');
+  grid.className = 'pell-grid';
+  const hint = 'The first row is the header';
+  for (let r = 1; r <= GRID; r++) for (let c = 1; c <= GRID; c++) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.dataset.r = String(r);
+    b.dataset.c = String(c);
+    b.setAttribute('aria-label', `${r} × ${c} table`);
+    grid.append(b);
+  }
+  const cell = (t: EventTarget | null) => (t as Element).closest?.<HTMLButtonElement>('.pell-grid button');
+  const mark = (b?: HTMLButtonElement | null) => {
+    const r = Number(b?.dataset.r ?? 0), c = Number(b?.dataset.c ?? 0);
+    for (const x of grid.children as HTMLCollectionOf<HTMLButtonElement>) x.classList.toggle('on', +x.dataset.r! <= r && +x.dataset.c! <= c);
+    label.textContent = b ? `${r} × ${c}` : hint;
+  };
+  for (const t of ['mouseover', 'focusin']) grid.addEventListener(t, ev => mark(cell(ev.target)));
+  grid.onmouseleave = () => mark(grid.contains(document.activeElement) ? document.activeElement as HTMLButtonElement : null);
+  grid.onclick = ev => {
+    const b = cell(ev.target);
+    if (b) pick(() => insertTable(e, +b.dataset.r!, +b.dataset.c!));
+  };
+  grid.onkeydown = ev => {
+    const b = cell(ev.target), d = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -GRID, ArrowDown: GRID }[ev.key];
+    if (!b || !d) return;
+    ev.preventDefault();
+    (grid.children[[...grid.children].indexOf(b) + d] as HTMLElement | undefined)?.focus();
+  };
+  mark();
+  box.append(grid, label);
+  return box;
+}
+
 /** Puts the single "read more" marker after the top-level block holding the caret. */
 function insertMore(e: Editor) {
   restoreSelection(e);
@@ -213,6 +291,8 @@ function editor(): Editor {
       { icon: '<code>`c`</code>', title: 'Inline code', active: ':not(pre) > code', result: () => inlineCode(e) },
       { icon: '&lt;/&gt;', title: 'Code block', active: 'pre', result: () => codeBlock(e) },
       'link',
+      { icon: svg('<rect x="1.75" y="2.75" width="12.5" height="10.5" rx="1.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M1 6.25h14v-2.5a1.75 1.75 0 0 0-1.75-1.75h-10.5A1.75 1.75 0 0 0 1 3.75z"/><path d="M1.75 9.75h12.5M6 6v7M10 6v7" stroke="currentColor" stroke-width="1.25"/>'),
+        title: 'Table', panel: pick => tablePicker(e, pick) },
       { icon: '&#128247;', title: 'Insert image', menu: [
         { label: 'From file…', result: () => { pickFiles('image/*', true).then(f => insertImages(e, f)) } },
         { label: 'From data URL…', result: () => imageFromDataURL(e) },
@@ -227,6 +307,7 @@ function editor(): Editor {
   new MutationObserver(() => { clearTimeout(pending); pending = setTimeout(highlight, 150) })
     .observe(e.content, { childList: true, subtree: true, characterData: true, attributes: true });
 
+  e.content.addEventListener('keydown', ev => tableTab(e, ev));
   document.addEventListener('selectionchange', () => {
     const s = getSelection();
     if (s?.rangeCount && e.content.contains(s.anchorNode)) e.saved = s.getRangeAt(0).cloneRange();

@@ -4,7 +4,7 @@
 // - states refresh on every selection change, including arrow keys;
 // - toolbar clicks don't take focus (and the selection) away from the text;
 // - its own undo/redo history (the browser's misses changes made by direct DOM edits);
-// - buttons can open a dropdown of choices (`menu`);
+// - buttons can open a dropdown of choices (`menu`) or of custom content (`panel`);
 // - only the default actions the blog uses are kept.
 
 export interface Action {
@@ -21,6 +21,11 @@ export interface MenuAction extends Omit<Action, 'result'> {
   menu: Array<{ label: string; result: Action['result'] }>;
 }
 
+/** A button that opens a dropdown with custom content; the content calls `pick` with the result to run, which also closes it. */
+export interface PanelAction extends Omit<Action, 'result'> {
+  panel: (pick: (result: Action['result']) => void) => HTMLElement;
+}
+
 /** What init() returns, also passed to action results. */
 export interface Editor { content: HTMLElement; undo(): void; redo(): void; resetHistory(): void }
 /** A default action by name, with some of its fields replaced. */
@@ -28,14 +33,14 @@ export type Override = Partial<Action> & { name: keyof typeof defaults };
 
 export interface Options {
   element: HTMLElement;
-  actions: Array<keyof typeof defaults | Action | MenuAction | Override>;
+  actions: Array<keyof typeof defaults | Action | MenuAction | PanelAction | Override>;
   defaultParagraphSeparator?: string;
   onChange?: (html: string) => void;
 }
 
 const formatBlock = 'formatBlock';
 /** 16px line icon in the text colour. */
-const svg = (body: string, box = '0 0 16 16') => `<svg viewBox="${box}" width="16" height="16" fill="currentColor" aria-hidden="true">${body}</svg>`;
+export const svg = (body: string, box = '0 0 16 16') => `<svg viewBox="${box}" width="16" height="16" fill="currentColor" aria-hidden="true">${body}</svg>`;
 const lines = '<rect x="6" y="2.75" width="9" height="1.5" rx=".75"/><rect x="6" y="7.25" width="9" height="1.5" rx=".75"/><rect x="6" y="11.75" width="9" height="1.5" rx=".75"/>';
 export const exec = (command: string, value: string | null = null) => document.execCommand(command, false, value ?? undefined);
 
@@ -62,7 +67,7 @@ interface State { html: string; sel: [number[], number, number[], number] | null
 const GROUP_MS = 1000; // typing closer together than this is one undo step
 
 export function init({ element, actions, defaultParagraphSeparator = 'div', onChange }: Options): Editor {
-  const list: Array<Action | MenuAction> = actions.map(a => typeof a === 'string' ? { name: a, ...defaults[a] } : 'name' in a && a.name! in defaults ? { ...defaults[a.name as keyof typeof defaults], ...a } : a as Action | MenuAction);
+  const list: Array<Action | MenuAction | PanelAction> = actions.map(a => typeof a === 'string' ? { name: a, ...defaults[a] } : 'name' in a && a.name! in defaults ? { ...defaults[a.name as keyof typeof defaults], ...a } : a as Action | MenuAction | PanelAction);
 
   const actionbar = document.createElement('div');
   actionbar.className = 'pell-actionbar';
@@ -182,16 +187,17 @@ export function init({ element, actions, defaultParagraphSeparator = 'div', onCh
     button.innerHTML = action.icon;
     button.title = action.title;
     button.type = 'button';
-    if ('menu' in action) {
+    if ('menu' in action || 'panel' in action) {
       // Wrapped so the dropdown can sit under its button; it stays inside the action bar, so clicks keep the selection.
-      const wrap = document.createElement('span'), menu = document.createElement('menu');
+      const wrap = document.createElement('span'), menu = document.createElement('menu' in action ? 'menu' : 'div');
       wrap.className = 'pell-dropdown';
       menu.className = 'pell-menu';
       menu.hidden = true;
-      button.setAttribute('aria-haspopup', 'menu');
+      button.setAttribute('aria-haspopup', 'menu' in action ? 'menu' : 'dialog');
       button.setAttribute('aria-expanded', 'false');
       const show = (open: boolean) => { menu.hidden = !open; button.setAttribute('aria-expanded', String(open)); button.classList.toggle('pell-button-selected', open) };
-      for (const item of action.menu) {
+      if ('panel' in action) menu.append(action.panel(result => { show(false); run(action.name, result) }));
+      else for (const item of action.menu) {
         const li = document.createElement('li'), b = document.createElement('button');
         b.type = 'button';
         b.textContent = item.label;

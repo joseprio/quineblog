@@ -89,6 +89,7 @@ const again = load(output);
 const roundTrip = again.quine.exportHTML();
 again.close();
 if (roundTrip !== output) throw new Error('Round-trip check failed: re-exporting the built page changed it.');
+if (/[^\0-\x7f]/.test(output)) throw new Error('The built page is not pure ASCII.');
 
 await mkdir(dirname(args.out), { recursive: true });
 await writeFile(args.out, output);

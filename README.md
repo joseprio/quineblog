@@ -35,9 +35,20 @@ bottom of the page offers the download too. Upload the downloaded file to publis
 
 - **✂** in the editor marks where the snippet on the home page ends.
 - Images (button, paste or drop, from a file or a pasted `data:image/…` URL) are inlined as data URLs; large ones are downscaled first.
+- The **table** button opens a grid: point at a square to pick the rows and columns (the first row is the header).
+  In a table, **Tab** and **Shift+Tab** move between cells, and **Tab** in the last cell adds a row.
 - **</>** makes a code block and **`c`** inline code; both ask for its language (`js`, `html`, `css`, …) to highlight it.
 - Categories are a comma-separated field per post.
 - **Settings** holds the blog title, description and theme hue.
+- **Download HTML** saves pure ASCII: other characters become character references in the HTML and `\u` / CSS escapes
+  in scripts and styles, so the file reads the same whatever encoding a server or editor assumes.
+
+## Snapshots
+
+Every change (applying a post, settings, an import…) saves the blog's data to `localStorage`, one snapshot per page
+load: further changes before reloading replace it. Importing or deleting all posts starts a new one, so the state before
+is kept. **Settings → Restore** lists the snapshots by date, restores one, or clears them all. The 20 newest are kept, and
+the oldest go first when storage is full. Snapshots are per browser and per page path.
 
 ## Code highlighting
 
@@ -67,6 +78,7 @@ version directly from an export with `npm run build -- --data your-export.json`.
 | `src/views.ts` | Hash router, infinite scroll, TOC highlighting |
 | `src/editor.ts` | Post editor dialog (Pell), image inlining, read-more marker |
 | `src/pell.ts` | Rich-text editor: an adapted TypeScript copy of [Pell](https://github.com/jaredreich/pell) 1.0.6 (MIT) |
-| `src/settings.ts` | Settings dialog and JSON import/export |
+| `src/settings.ts` | Settings dialog, JSON import/export and the snapshot **Restore** menu |
+| `src/snapshots.ts` | Automatic snapshots in `localStorage` |
 | `src/author.ts` | The **⋯** menu, the unsaved-changes bar and **Download HTML** |
 | `content/seed.json` | Sample posts used by the default build |

@@ -58,13 +58,15 @@ input { display: block; width: 100%; margin-top: .25rem; font: inherit; padding:
 fieldset { border: 0; padding: 0; margin: 0; min-width: 0 }
 
 /* Site header */
-body > header { padding: 1.5rem 0 1rem }
-body > header nav, body > header ul { display: flex; align-items: center; flex-wrap: wrap; gap: .25rem 1rem; margin: 0; padding: 0; list-style: none }
-body > header nav { justify-content: space-between }
+/* A grid, with the nav's two lists as its cells, so the subtitle stays under the title even when the links would wrap */
+body > header { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 1rem; padding: 1.5rem 0 1rem }
+body > header nav { display: contents }
+body > header ul { display: flex; align-items: center; flex-wrap: wrap; gap: .25rem 1rem; margin: 0; padding: 0; list-style: none }
+body > header ul:last-child { justify-content: flex-end; flex-wrap: nowrap } /* the title wraps instead, so the ⋯ menu stays top right */
 body > header li { margin: 0 }
 body > header h1 { margin: 0; font-size: 1.4rem }
 body > header h1 a { color: var(--heading) }
-body > header > p { margin: .25rem 0 0; color: var(--muted) }
+body > header > p { grid-column: 1 / -1; margin: .25rem 0 0; color: var(--muted) }
 body > header > p:empty { display: none }
 body > header button { padding: .3rem .55rem; background: none; border-color: var(--border); color: var(--fg) }
 
